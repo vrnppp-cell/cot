@@ -475,6 +475,16 @@ function taskForm(p={}){
     <div class="mfield"><label>วันครบกำหนด</label><input type="date" id="f-due" value="${p.due_date||''}"/></div>
   </div>
   <div class="mfield"><label>เวลา (สำหรับ Calendar)</label><input type="time" id="f-time" value="${p.due_time||'09:00'}"/></div>
+  ${hasCalSetup?`<div class="mfield"><label>รูปแบบ Calendar Event</label>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)">
+        <input type="radio" name="cal-type" value="single" ${!(p.cal_type==='range')?'checked':''} style="accent-color:var(--forest)"/> 📌 วันส่งงานวันเดียว
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)">
+        <input type="radio" name="cal-type" value="range" ${p.cal_type==='range'?'checked':''} style="accent-color:var(--forest)"/> 📅 ช่วงเวลา (เริ่ม → ส่ง)
+      </label>
+    </div>
+  </div>`:''}`
   <div class="mfield"><label>สถานะ</label><select id="f-status">
     <option value="todo" ${(p.status||'todo')==='todo'?'selected':''}>รอดำเนินการ</option>
     <option value="inprogress" ${p.status==='inprogress'?'selected':''}>กำลังทำ</option>
@@ -497,8 +507,10 @@ async function saveNewTask(){
   const dueTime=document.getElementById('f-time').value;
   let calEventId=null;
   if(calId&&dueDate){
-    calEventId=await addCalEvent(title,assignees,dueDate,dueTime).catch(()=>null);
+    const startDate=document.getElementById('f-start').value||dueDate;
+    calEventId=await addCalEvent(title,assignees,dueDate,dueTime,startDate,calType).catch(()=>null);
   }
+  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   await sb.from('tasks').insert({
     project_id:document.getElementById('f-pid').value||null,
     title,client:document.getElementById('f-client').value,
@@ -507,7 +519,8 @@ async function saveNewTask(){
     due_date:dueDate||null,due_time:dueTime||null,
     status:document.getElementById('f-status').value,
     note:document.getElementById('f-note').value,
-    cal_event_id:calEventId
+    cal_event_id:calEventId,
+    cal_type:calType
   });
   closeModal();await loadAll();
 }
@@ -526,9 +539,11 @@ async function saveEdit(tid){
   const t=tasks.find(x=>x.id===tid);
   let calEventId=t.cal_event_id;
   if(calId&&dueDate){
-    if(calEventId) await updateCalEvent(calEventId,title,assignees,dueDate,dueTime).catch(()=>{});
-    else calEventId=await addCalEvent(title,assignees,dueDate,dueTime).catch(()=>null);
+    const startDate2=document.getElementById('f-start').value||dueDate;
+    if(calEventId) await updateCalEvent(calEventId,title,assignees,dueDate,dueTime,startDate2,calType).catch(()=>{});
+    else calEventId=await addCalEvent(title,assignees,dueDate,dueTime,startDate2,calType).catch(()=>null);
   }
+  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   await sb.from('tasks').update({
     project_id:document.getElementById('f-pid').value||null,
     title,client:document.getElementById('f-client').value,
@@ -537,7 +552,8 @@ async function saveEdit(tid){
     due_date:dueDate||null,due_time:dueTime||null,
     status:document.getElementById('f-status').value,
     note:document.getElementById('f-note').value,
-    cal_event_id:calEventId
+    cal_event_id:calEventId,
+    cal_type:calType
   }).eq('id',tid);
   closeModal();await loadAll();
 }
@@ -680,21 +696,38 @@ async function getCalToken(){
   return null;
 }
 
-async function addCalEvent(title,assignees,dueDate,dueTime='09:00'){
+async function addCalEvent(title,assignees,dueDate,dueTime='09:00',startDate=null,calType='single'){
   const token=await getCalToken();if(!token)return null;
-  const dt=dueDate+'T'+dueTime+':00+07:00';
-  const dtEnd=dueDate+'T'+(parseInt(dueTime.split(':')[0])+1).toString().padStart(2,'0')+':'+dueTime.split(':')[1]+':00+07:00';
-  const body={summary:title+(assignees.length?` [${assignees.join(', ')}]`:''),start:{dateTime:dt,timeZone:'Asia/Bangkok'},end:{dateTime:dtEnd,timeZone:'Asia/Bangkok'}};
+  let body;
+  const label=title+(assignees.length?` [${assignees.join(', ')}]`:'');
+  if(calType==='range'&&startDate&&startDate!==dueDate){
+    // all-day range event
+    const endDateObj=new Date(dueDate);endDateObj.setDate(endDateObj.getDate()+1);
+    const endDateStr=endDateObj.toISOString().split('T')[0];
+    body={summary:label,start:{date:startDate},end:{date:endDateStr}};
+  } else {
+    const dt=dueDate+'T'+dueTime+':00+07:00';
+    const dtEnd=dueDate+'T'+(parseInt(dueTime.split(':')[0])+1).toString().padStart(2,'0')+':'+dueTime.split(':')[1]+':00+07:00';
+    body={summary:label,start:{dateTime:dt,timeZone:'Asia/Bangkok'},end:{dateTime:dtEnd,timeZone:'Asia/Bangkok'}};
+  }
   const resp=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
   const data=await resp.json();
   return data.id||null;
 }
 
-async function updateCalEvent(eventId,title,assignees,dueDate,dueTime='09:00'){
+async function updateCalEvent(eventId,title,assignees,dueDate,dueTime='09:00',startDate=null,calType='single'){
   const token=await getCalToken();if(!token)return;
-  const dt=dueDate+'T'+dueTime+':00+07:00';
-  const dtEnd=dueDate+'T'+(parseInt(dueTime.split(':')[0])+1).toString().padStart(2,'0')+':'+dueTime.split(':')[1]+':00+07:00';
-  const body={summary:title+(assignees.length?` [${assignees.join(', ')}]`:''),start:{dateTime:dt,timeZone:'Asia/Bangkok'},end:{dateTime:dtEnd,timeZone:'Asia/Bangkok'}};
+  let body;
+  const label=title+(assignees.length?` [${assignees.join(', ')}]`:'');
+  if(calType==='range'&&startDate&&startDate!==dueDate){
+    const endDateObj=new Date(dueDate);endDateObj.setDate(endDateObj.getDate()+1);
+    const endDateStr=endDateObj.toISOString().split('T')[0];
+    body={summary:label,start:{date:startDate},end:{date:endDateStr}};
+  } else {
+    const dt=dueDate+'T'+dueTime+':00+07:00';
+    const dtEnd=dueDate+'T'+(parseInt(dueTime.split(':')[0])+1).toString().padStart(2,'0')+':'+dueTime.split(':')[1]+':00+07:00';
+    body={summary:label,start:{dateTime:dt,timeZone:'Asia/Bangkok'},end:{dateTime:dtEnd,timeZone:'Asia/Bangkok'}};
+  }
   await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${eventId}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
 }
 
