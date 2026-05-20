@@ -214,11 +214,7 @@ CREATE POLICY IF NOT EXISTS "open" ON members FOR ALL USING (true) WITH CHECK (t
 
 
 
-    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:600;color:var(--forest);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.75rem">Google Calendar Private Key</div>
-      <textarea id="cal-key-inp" placeholder="วาง private_key จากไฟล์ JSON ทั้งหมด รวม BEGIN/END..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11px;font-family:monospace;background:var(--card);color:var(--text);outline:none;resize:vertical;min-height:80px;line-height:1.5"></textarea>
-      <div style="font-size:11px;color:var(--hint);margin-top:4px">ถ้าไม่มี Calendar ข้ามได้เลย — ไม่บังคับ</div>
-    </div>
+
     <div class="err" id="errmsg"></div>
     <button class="btn-connect" id="btnconn" onclick="connect()">เชื่อมต่อและเริ่มใช้งาน</button>
     <p class="setup-note">เบราว์เซอร์จะจำค่าให้ ไม่ต้องกรอกซ้ำ</p>
@@ -265,7 +261,7 @@ const STATUS_ORDER=['overdue','inprogress','waiting','todo','done'];
 let sb=null,projects=[],tasks=[],subtasks=[],members=[],expanded=new Set(),activePid='all';
 let calId='thehouseofcogroup@gmail.com';
 let calEmail='cot-follow@glossy-beach-496908-u8.iam.gserviceaccount.com';
-let calKey=localStorage.getItem('cal_key')||'';
+let calKey=atob('LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQ3o2eVJrZUtmVXMvYysKMlQvRTN2ZjF2eGd0UlVMRDFNSVBJaEFab3VLRjhkQTFhSTdVNElUSmtTOXJmMzlBdDJFN2FyVENlNEFzcFdWaQpqaXZaaUNIUkZOdGtpbHRtMmZFTEw2VTBjVlJGZ0drdm5saVpJUmNPSXVsZUR2SzA0RnRjNjNQaHEvS1hNWXdSCmVYUzBha2pyemY5QkVpT3NMZDZtWXFYZFVjajNaVzdic2kzejl6VnYySHQ5MHJXdGpSWWNhU3BBaW5DeElpOUoKZHA3TUYvWG5ucXZkUEd1ZGJ3VTJXdnQ1ekRHcE1BajhPUVN5cXV3TjUwNHhSeXZBajBadXB5NnRaWDZkK09HVApqWUdtOEQ4QWZIM09TdkpTbDZORzNISEYwNFJyREdpRWhXMkhFK0xKNVVoTjdiRlNZMDl0L2NSb3VjN3dwcThmCno5REQvMk5KQWdNQkFBRUNnZ0VBQ3RleFhrS3RMcExYNUJnNGtSYzB6MEVBWm40Rmk0S3ZYVFVhemtpMEtRbE4KR0dMZ05MRUJINXFaeG5zdEFvdnFscWVVRkNKWU01aVdGdzNsVTVzeUdvVU13YTdhMmtScEU5ai90anpjTE1JVAoxTFJRdDQyNGMzZ2tJekI0YlBFV1lHK3FFS0FKb3hYdjBIL0d5amFiaFdacEt4VTZSQjZSaStwbS80TDF2djdxCmdjSjlyNDcrQklGeUpRc2oxejArRlpEUW1WTDBrYm1CN1JNd3p0N1ZkNjlmOHZtdE1MSncvcUZpbXBVSU1xR0YKdm84NVdocUNTdTFOS3oxbTRqVEVmTVJ3SGhJS3VUdDE4VkJua1E2V240Z25OTFNoR3hFb3dZYmtSVDNGTVVVdwplUUR0NGpDZVdkR3ROaDY5TmhqVU41ZEN5NHZCRkwzWStyWFNXUVFsMXdLQmdRRGRTSTVSbms4YmNmcVdQVHJiCkZVVUVrMG1ndzlsdndWd2VNajR3cFUyZENnVDhXRkVKZy80ckZEekRqQ2REdVFuK0MrRlV0VjR1M1orbWJVckwKaWZqUGEzMHYrVldlZUJiOXk4ZWRvYmRGMThsa0N5aWtPc0czM0Erc0EwdEFlSDJIaks2Ym1yalVocUNxYWVpbAp4WWtRelE4WUNKQUdKUXErSFJPdFZzSHJ5d0tCZ1FEUUpUMmhKdm5WSDFDK2JVUlh6SjN1aTlIWGRGdlcyNXczCmZYOEdaK1Fudzdjem9QSDc0NW5GdmtYdjJqanNpSzhzaXJXZGJpQUZabjZNM1FCS0VoNGQrMnhQd2hXNCt0ME0KcWJVTHNSUU1MT1VYc255REVjSUlKdXp2Zm9rRDN6ZXVzR0lmTmg1cVg2Z2NaWmhDSzVjS1FyaGxON2FnV1ZiTQpZbk83aUkreXV3S0JnRTA2Mm5qLzhJb2FvS080NFFhL2lLUU5KOEJWT2xrM3VnZkw3MHFaRnRwOU9ibzh0S1BHCmpubklpV0NTVk0zZEVmQzVncjVHd29WRzBrYUtsSFV2UlVoWE1vMEF6M0lNWmJIVVltblFuQjlqTGFXZUEyUTIKSVpBaTNORmpJT3R5WWhWaDh6clpxREo4Zml5YjVCZWZOclJIYlVJdEV0OGlKSHF2dVVOaEtUTTdBb0dCQUtsbQp4Y1BVanR4dmdpMlpqRmZReG5DUkJ4WE5NN21vUG5uQy81RGRHUWxyOWp4a3JzME1yZWdNTmF0QjliWThnQ1ZHCk53Mkx4Uy9mL1ByMEd2b3R5S2txS1RxNGdTbHRzbDVOK0hVdGgxMXBaSUptMTROcy9uZllCbG5jcC9Lb3h3NjcKcXdBdjhZMHRrUXFiZk5ITjNEMlRrN045Sm50V2VwZ1pRSXZPVnZWbEFvR0JBTUlRck4wbDJqMHRDN3gxQ1QwawpVVUplUVl3NisvZzRxajBqaTZoV0duZWk5ZlF0RjE4dnRjbjVzYVhTNUc0QnZTd05JWFpCakx4TUc3RC9YUVd0Cmdackx3TnNJcmlHVEFtRElSV1JhaG9ZNy93Umx3bE1KbnoyR3d5YThEdml5anh1bkRBMmFBSWVkZWt0cGhyQmcKejAwQng0c1VmVk5rb2xHbllCVUwyWXk2Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=');
 let calToken=null,calTokenExpiry=0;
 
 function today(){return new Date().toISOString().split('T')[0]}
@@ -670,7 +666,7 @@ async function getCalToken(){
     const header=btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const claim=btoa(JSON.stringify({iss:calEmail,scope:'https://www.googleapis.com/auth/calendar',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const sigInput=`${header}.${claim}`;
-    const pemKey=calKey.replace(/\\n/g,'').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\t ]/g,'').trim();
+    const pemKey=calKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\s]/g,'').trim();
     const binaryKey=Uint8Array.from(atob(pemKey),c=>c.charCodeAt(0));
     const cryptoKey=await crypto.subtle.importKey('pkcs8',binaryKey,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
     const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',cryptoKey,new TextEncoder().encode(sigInput));
@@ -728,8 +724,7 @@ window.onload=function(){
   if(url&&key){
     document.getElementById('sb-url').value=url;
     document.getElementById('sb-key').value=key;
-    const savedKey=localStorage.getItem('cal_key');
-    if(savedKey){const el=document.getElementById('cal-key-inp');if(el)el.value=savedKey;}
+
     connect();
   }
 };
