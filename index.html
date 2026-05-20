@@ -212,11 +212,7 @@ CREATE POLICY IF NOT EXISTS "open" ON members FOR ALL USING (true) WITH CHECK (t
     <div class="sfield"><label>Supabase URL</label><input id="sb-url" placeholder="https://xxxx.supabase.co"/></div>
     <div class="sfield"><label>Publishable Key</label><input id="sb-key" placeholder="sb_publishable_..."/></div>
 
-    <div class="setup-section">Google Calendar (ไม่บังคับ)</div>
-    <div class="sfield"><label>Calendar ID</label><input id="cal-id" placeholder="thehouseofcogroup@gmail.com"/></div>
-    <div class="sfield"><label>Service Account Email</label><input id="cal-email" placeholder="cot-follow@....iam.gserviceaccount.com"/></div>
-    <div class="sfield"><label>Private Key (จาก JSON — วางทั้งหมดรวม BEGIN/END)</label><textarea id="cal-key" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea></div>
-    <div class="cal-info">🔒 ข้อมูลเก็บใน browser ของคุณเท่านั้น ไม่ส่งออกไปที่อื่น</div>
+
 
     <div class="err" id="errmsg"></div>
     <button class="btn-connect" id="btnconn" onclick="connect()">เชื่อมต่อและเริ่มใช้งาน</button>
@@ -262,7 +258,36 @@ const ACOLORS=['#354B47','#1F2E2A','#2A6B45','#7A5800','#7A1060','#1A4A6B','#6B2
 const STATUS_LABEL={todo:'รอดำเนินการ',inprogress:'กำลังทำ',done:'เสร็จแล้ว',waiting:'รอผลตอบ',overdue:'เกินกำหนด'};
 const STATUS_ORDER=['overdue','inprogress','waiting','todo','done'];
 let sb=null,projects=[],tasks=[],subtasks=[],members=[],expanded=new Set(),activePid='all';
-let calId='',calEmail='',calKey='';
+let calId='thehouseofcogroup@gmail.com';
+let calEmail='cot-follow@glossy-beach-496908-u8.iam.gserviceaccount.com';
+let calKey=[
+'MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCz6yRkeKfUs/c+',
+'2T/E3vf1vxgtRULD1MIPIhAZouKF8dA1aI7U4ITJkS9rf39At2E7arTCe4AspWVi',
+'jivZiCHRFNtkiltm2fELL6U0cVRFgGkvnliZIRcOIuleDvK04Ftc63Phq/KXMYwR',
+'eXS0akjrzf9BEiOsLd6mYqXdUcj3ZW7bsi3z9zVv2Ht90rWtjRYcaSpAinCxIi9J',
+'dp7MF/XnnqvdPGudbwU2Wvt5zDGpMAj8OQSyquwN504xRyvAj0Zupy6tZX6d+OGT',
+'jYGm8D8AfH3OSvJSl6NG3HHF04RrDGiEhW2HE+LJ5UhN7bFSY09t/cRouc7wpq8f',
+'z9DD/2NJAgMBAAECggEACtexXkKtLpLX5Bg4kRc0z0EAZn4Fi4KvXTUazki0KQlN',
+'GGLgNLEBH5qZxnstAovqlqeUFCJYM5iWFw3lU5syGoUMwa7a2kRpE9j/tjzcLMIT',
+'1LRQt424c3gkIzB4bPEWYG+qEKAJoxXv0H/GyjabhWZpKxU6RB6Ri+pm/4L1vv7q',
+'gcJ9r47+BIFyJQsj1z0+FZDQmVL0kbmB7RMwzt7Vd69f8vmtMLJw/qFimpUIMqGF',
+'vo85WhqCSu1NKz1m4jTEfMRwHhIKuTt18VBnkQ6Wn4gnNLShGxEowYbkRT3FMUUw',
+'eQDt4jCeWdGtNh69NhjUN5dCy4vBFL3Y+rXSWQQl1wKBgQDdSI5Rnk8bcfqWPTrb',
+'FUUEk0mgw9lvwVweMj4wpU2dCgT8WFEJg/4rFDzDjCdDuQn+C+FUtV4u3Z+mbUrL',
+'ifjPa30v+VWeeBb9y8edobdF18lkCyikOsG33A+sA0tAeH2HjK6bmrjUhqCqaeil',
+'xYkQzQ8YCJAGJQq+HROtVsHrywKBgQDQJT2hJvnVH1C+bURXzJ3ui9HXdFvW25w3',
+'fX8GZ+Qnw7czoPH745nFvkXv2jjsiK8sirWdbiAFZn6M3QBKEh4d+2xPwhW4+t0M',
+'qbULsRQMLOUXsnyDEcIIJuzvfokD3zeusGIfNh5qX6gcZZhCK5cKQrhlN7agWVbM',
+'YnO7iI+yuwKBgE062nj/8IoaoKO44Qa/iKQNJ8BVOlk3ugfL70qZFtp9Obo8tKPG',
+'jnnIiWCSVM3dEfC5gr5GwoVG0kaKlHUvRUhXMo0Az3IMZbHUYmnQnB9jLaWeA2Q2',
+'IZAi3NFjIOtyYhVh8zrZqDJ8fiyb5BefNrRHbUItEt8iJHqvuUNhKTM7AoGBAKlm',
+'xcPUjtxvgi2ZjFfQxnCRBxXNM7moPnnC/5DdGQlr9jxkrs0MregMNatB9bY8gCVG',
+'Nw2LxS/f/Pr0GvotyKkqKTq4gSltsl5N+HUth11pZIJm14Ns/nfYBlncp/Koxw67',
+'qwAv8Y0tkQqbfNHN3D2Tk7N9JntWepgZQIvOVvVlAoGBAMIQrN0l2j0tC7x1CT0k',
+'UUJeQYw6+/g4qj0ji6hWGnei9fQtF18vtcn5saXS5G4BvSwNIXZBjLxMG7D/XQWt',
+'gZrLwNsIriGTAmDIRWRahoY7/wRlwlMJnz2Gwya8DviyjxunDA2aAIedektphrBg',
+'z00Bx4sUfVNkolGnYBUL2Yy6'
+].join('');
 let calToken=null,calTokenExpiry=0;
 
 function today(){return new Date().toISOString().split('T')[0]}
@@ -284,13 +309,7 @@ async function connect(){
     const {error}=await sb.from('projects').select('id').limit(1);
     if(error)throw error;
     localStorage.setItem('sb_url',url);localStorage.setItem('sb_key',key);
-    const cid=document.getElementById('cal-id').value.trim();
-    const cem=document.getElementById('cal-email').value.trim();
-    const cke=document.getElementById('cal-key').value.trim();
-    if(cid&&cem&&cke){
-      localStorage.setItem('cal_id',cid);localStorage.setItem('cal_email',cem);localStorage.setItem('cal_key',cke);
-      calId=cid;calEmail=cem;calKey=cke;
-    }
+
     startApp();
   }catch(e){
     err.style.display='block';err.textContent='เชื่อมต่อไม่ได้: '+e.message;
@@ -683,7 +702,7 @@ async function getCalToken(){
     const header=btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const claim=btoa(JSON.stringify({iss:calEmail,scope:'https://www.googleapis.com/auth/calendar',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const sigInput=`${header}.${claim}`;
-    const pemKey=calKey.replace(/\\n/g,'').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\s]/g,'').trim();
+    const pemKey=calKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\s]/g,'').trim();
     const binaryKey=Uint8Array.from(atob(pemKey),c=>c.charCodeAt(0));
     const cryptoKey=await crypto.subtle.importKey('pkcs8',binaryKey,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
     const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',cryptoKey,new TextEncoder().encode(sigInput));
@@ -738,15 +757,9 @@ async function deleteCalEvent(eventId){
 
 window.onload=function(){
   const url=localStorage.getItem('sb_url'),key=localStorage.getItem('sb_key');
-  calId=localStorage.getItem('cal_id')||'';
-  calEmail=localStorage.getItem('cal_email')||'';
-  calKey=localStorage.getItem('cal_key')||'';
   if(url&&key){
     document.getElementById('sb-url').value=url;
     document.getElementById('sb-key').value=key;
-    if(calId)document.getElementById('cal-id').value=calId;
-    if(calEmail)document.getElementById('cal-email').value=calEmail;
-    if(calKey)document.getElementById('cal-key').value=calKey;
     connect();
   }
 };
