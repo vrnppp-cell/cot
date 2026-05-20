@@ -553,37 +553,65 @@ async function saveSub(tid){
 }
 
 /* PROJECT MANAGER */
-function openManageProj(){
-  const rows=projects.map(p=>`
+function openManageProj(tab='active'){
+  const active=projects.filter(p=>!p.archived);
+  const archived=projects.filter(p=>p.archived);
+
+  const activeRows=active.length?active.map(p=>`
     <div class="proj-card">
       <div class="proj-card-name">${p.name}</div>
-      <span class="proj-badge ${p.archived?'archived':'active'}">${p.archived?'Archive':'Active'}</span>
-      <button class="btn ghost sm" onclick="toggleArchive('${p.id}',${p.archived})">${p.archived?'🔄 คืนค่า':'📦 Archive'}</button>
+      <span class="proj-badge active">Active</span>
+      <button class="btn ghost sm" onclick="toggleArchive('${p.id}',false)">📦 Archive</button>
       <button class="btn danger sm" onclick="deleteProj('${p.id}')">🗑</button>
-    </div>`).join('');
+    </div>`).join(''):`<div style="color:var(--muted);font-size:13px;text-align:center;padding:1.5rem">ไม่มีโปรเจค Active</div>`;
+
+  const archivedRows=archived.length?archived.map(p=>{
+    const taskCount=tasks.filter(t=>t.project_id===p.id).length;
+    const doneCount=tasks.filter(t=>t.project_id===p.id&&t.status==='done').length;
+    return `<div class="proj-card" style="opacity:.85">
+      <div style="flex:1">
+        <div class="proj-card-name">${p.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">งาน ${taskCount} รายการ · เสร็จ ${doneCount} รายการ</div>
+      </div>
+      <span class="proj-badge archived">Archive</span>
+      <button class="btn ghost sm" onclick="toggleArchive('${p.id}',true)">🔄 คืนค่า</button>
+      <button class="btn danger sm" onclick="deleteProj('${p.id}')">🗑</button>
+    </div>`;
+  }).join(''):`<div style="color:var(--muted);font-size:13px;text-align:center;padding:1.5rem">ยังไม่มีโปรเจคที่ Archive</div>`;
+
   openModal(`<h2>📁 จัดการโปรเจค</h2>
-    ${rows||'<div style="color:var(--muted);font-size:13px;text-align:center;padding:1rem">ยังไม่มีโปรเจค</div>'}
-    <div style="display:flex;gap:8px;margin-top:8px">
+    <div style="display:flex;gap:4px;margin-bottom:1rem;background:var(--bg);border-radius:var(--r-sm);padding:4px">
+      <button onclick="openManageProj('active')" style="flex:1;padding:6px;border:none;border-radius:6px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;transition:all .15s;background:${tab==='active'?'var(--card)':'transparent'};color:${tab==='active'?'var(--forest)':'var(--muted)'};box-shadow:${tab==='active'?'0 1px 3px rgba(0,0,0,.08)':'none'}">
+        🟢 Active (${active.length})
+      </button>
+      <button onclick="openManageProj('archive')" style="flex:1;padding:6px;border:none;border-radius:6px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;transition:all .15s;background:${tab==='archive'?'var(--card)':'transparent'};color:${tab==='archive'?'var(--forest)':'var(--muted)'};box-shadow:${tab==='archive'?'0 1px 3px rgba(0,0,0,.08)':'none'}">
+        📦 Archive (${archived.length})
+      </button>
+    </div>
+    <div style="max-height:320px;overflow-y:auto">
+      ${tab==='active'?activeRows:archivedRows}
+    </div>
+    ${tab==='active'?`<div style="display:flex;gap:8px;margin-top:12px">
       <input id="pname" placeholder="ชื่อโปรเจคใหม่..." style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:'Sarabun',sans-serif;background:var(--card);color:var(--text);outline:none"/>
       <button class="btn primary" onclick="saveProj()">+ สร้าง</button>
-    </div>
+    </div>`:''}
     <div class="mfooter"><button class="btn" onclick="closeModal()">ปิด</button></div>`);
-  setTimeout(()=>document.getElementById('pname')&&document.getElementById('pname').addEventListener('keydown',e=>{if(e.key==='Enter')saveProj();}),100);
+  if(tab==='active') setTimeout(()=>document.getElementById('pname')&&document.getElementById('pname').addEventListener('keydown',e=>{if(e.key==='Enter')saveProj();}),100);
 }
 
 async function saveProj(){
   const name=document.getElementById('pname').value.trim();if(!name)return;
   await sb.from('projects').insert({name,archived:false});
-  await loadAll();openManageProj();
+  await loadAll();openManageProj('active');
 }
 async function toggleArchive(id,isArchived){
   await sb.from('projects').update({archived:!isArchived}).eq('id',id);
-  await loadAll();openManageProj();
+  await loadAll();openManageProj(isArchived?'active':'archive');
 }
 async function deleteProj(id){
   if(!confirm('ลบโปรเจคนี้และงานทั้งหมด?'))return;
   await sb.from('projects').delete().eq('id',id);
-  await loadAll();openManageProj();
+  await loadAll();openManageProj('active');
 }
 
 /* MEMBERS */
@@ -639,7 +667,7 @@ async function getCalToken(){
     const header=btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const claim=btoa(JSON.stringify({iss:calEmail,scope:'https://www.googleapis.com/auth/calendar',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const sigInput=`${header}.${claim}`;
-    const pemKey=calKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+    const pemKey=calKey.replace(/\\n/g,'').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\s]/g,'').trim();
     const binaryKey=Uint8Array.from(atob(pemKey),c=>c.charCodeAt(0));
     const cryptoKey=await crypto.subtle.importKey('pkcs8',binaryKey,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
     const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',cryptoKey,new TextEncoder().encode(sigInput));
