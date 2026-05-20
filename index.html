@@ -462,36 +462,26 @@ function getSelectedAssignees(){
 function taskForm(p={}){
   const assignees=p.assignees||[];
   const hasCalSetup=calId&&calEmail&&calKey;
-  return `
-  <div class="mfield"><label>ชื่องาน *</label><input id="f-title" value="${p.title||''}"/></div>
-  <div class="mfield"><label>โปรเจค</label><select id="f-pid">${projects.filter(x=>!x.archived).map(pr=>`<option value="${pr.id}" ${p.project_id===pr.id?'selected':''}>${pr.name}</option>`).join('')}</select></div>
-  <div class="mfield"><label>ลูกค้า / ผู้ว่าจ้าง</label><input id="f-client" value="${p.client||''}"/></div>
-  <div class="mfield"><label>ผู้รับผิดชอบ (เลือกได้หลายคน)</label>${assigneeSelector(assignees)}</div>
-  <div class="mfield-row">
-    <div class="mfield"><label>วันเริ่มงาน</label><input type="date" id="f-start" value="${p.start_date||today()}"/></div>
-    <div class="mfield"><label>วันครบกำหนด</label><input type="date" id="f-due" value="${p.due_date||''}"/></div>
-  </div>
-  <div class="mfield"><label>เวลา (สำหรับ Calendar)</label><input type="time" id="f-time" value="${p.due_time||'09:00'}"/></div>
-  ${hasCalSetup?`<div class="mfield"><label>รูปแบบ Calendar Event</label>
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)">
-        <input type="radio" name="cal-type" value="single" ${!(p.cal_type==='range')?'checked':''} style="accent-color:var(--forest)"/> 📌 วันส่งงานวันเดียว
-      </label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)">
-        <input type="radio" name="cal-type" value="range" ${p.cal_type==='range'?'checked':''} style="accent-color:var(--forest)"/> 📅 ช่วงเวลา (เริ่ม → ส่ง)
-      </label>
-    </div>
-  </div>`:''}`
-  <div class="mfield"><label>สถานะ</label><select id="f-status">
-    <option value="todo" ${(p.status||'todo')==='todo'?'selected':''}>รอดำเนินการ</option>
-    <option value="inprogress" ${p.status==='inprogress'?'selected':''}>กำลังทำ</option>
-    <option value="waiting" ${p.status==='waiting'?'selected':''}>รอผลตอบ</option>
-    <option value="done" ${p.status==='done'?'selected':''}>เสร็จแล้ว</option>
-  </select></div>
-  <div class="mfield"><label>หมายเหตุ</label><textarea id="f-note">${p.note||''}</textarea></div>
-  ${hasCalSetup?`<div class="cal-info">📅 งานนี้จะถูกเพิ่มใน Google Calendar อัตโนมัติ</div>`:''}`;
+  const isRange=p.cal_type==='range';
+  const calTypeHtml=hasCalSetup?('<div class="mfield"><label>รูปแบบใน Google Calendar</label><div style="display:flex;gap:8px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)"><input type="radio" name="cal-type" value="single" '+(isRange?'':'checked')+' style="accent-color:var(--forest)"/> วันส่งงานวันเดียว</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card)"><input type="radio" name="cal-type" value="range" '+(isRange?'checked':'')+' style="accent-color:var(--forest)"/> ช่วงเวลา (เริ่ม-ส่ง)</label></div></div>'):'';
+  const calInfoHtml=hasCalSetup?'<div class="cal-info">งานนี้จะถูกเพิ่มใน Google Calendar อัตโนมัติ</div>':'';
+  return '<div class="mfield"><label>ชื่องาน *</label><input id="f-title" value="'+(p.title||'')+'"/></div>'+
+    '<div class="mfield"><label>โปรเจค</label><select id="f-pid">'+projects.filter(x=>!x.archived).map(pr=>'<option value="'+pr.id+'" '+(p.project_id===pr.id?'selected':'')+'>'+pr.name+'</option>').join('')+'</select></div>'+
+    '<div class="mfield"><label>ลูกค้า / ผู้ว่าจ้าง</label><input id="f-client" value="'+(p.client||'')+'"/></div>'+
+    '<div class="mfield"><label>ผู้รับผิดชอบ (เลือกได้หลายคน)</label>'+assigneeSelector(assignees)+'</div>'+
+    '<div class="mfield-row"><div class="mfield"><label>วันเริ่มงาน</label><input type="date" id="f-start" value="'+(p.start_date||today())+'"/></div>'+
+    '<div class="mfield"><label>วันครบกำหนด</label><input type="date" id="f-due" value="'+(p.due_date||'')+'"/></div></div>'+
+    '<div class="mfield"><label>เวลา</label><input type="time" id="f-time" value="'+(p.due_time||'09:00')+'"/></div>'+
+    calTypeHtml+
+    '<div class="mfield"><label>สถานะ</label><select id="f-status">'+
+    '<option value="todo" '+(((p.status||'todo')==='todo')?'selected':'')+'>รอดำเนินการ</option>'+
+    '<option value="inprogress" '+(p.status==='inprogress'?'selected':'')+'>กำลังทำ</option>'+
+    '<option value="waiting" '+(p.status==='waiting'?'selected':'')+'>รอผลตอบ</option>'+
+    '<option value="done" '+(p.status==='done'?'selected':'')+'>เสร็จแล้ว</option>'+
+    '</select></div>'+
+    '<div class="mfield"><label>หมายเหตุ</label><textarea id="f-note">'+(p.note||'')+'</textarea></div>'+
+    calInfoHtml;
 }
-
 function openNewTask(){
   openModal(`<h2>+ เพิ่มงานใหม่</h2>${taskForm()}<div class="mfooter"><button class="btn" onclick="closeModal()">ยกเลิก</button><button class="btn primary" onclick="saveNewTask()">บันทึก</button></div>`);
 }
