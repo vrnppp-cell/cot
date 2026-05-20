@@ -492,12 +492,12 @@ async function saveNewTask(){
   const assignees=getSelectedAssignees();
   const dueDate=document.getElementById('f-due').value;
   const dueTime=document.getElementById('f-time').value;
+  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   let calEventId=null;
   if(calId&&dueDate){
     const startDate=document.getElementById('f-start').value||dueDate;
     calEventId=await addCalEvent(title,assignees,dueDate,dueTime,startDate,calType).catch(()=>null);
   }
-  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   await sb.from('tasks').insert({
     project_id:document.getElementById('f-pid').value||null,
     title,client:document.getElementById('f-client').value,
@@ -523,6 +523,7 @@ async function saveEdit(tid){
   const assignees=getSelectedAssignees();
   const dueDate=document.getElementById('f-due').value;
   const dueTime=document.getElementById('f-time').value;
+  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   const t=tasks.find(x=>x.id===tid);
   let calEventId=t.cal_event_id;
   if(calId&&dueDate){
@@ -530,7 +531,6 @@ async function saveEdit(tid){
     if(calEventId) await updateCalEvent(calEventId,title,assignees,dueDate,dueTime,startDate2,calType).catch(()=>{});
     else calEventId=await addCalEvent(title,assignees,dueDate,dueTime,startDate2,calType).catch(()=>null);
   }
-  const calType=document.querySelector('input[name="cal-type"]:checked')?.value||'single';
   await sb.from('tasks').update({
     project_id:document.getElementById('f-pid').value||null,
     title,client:document.getElementById('f-client').value,
@@ -670,7 +670,7 @@ async function getCalToken(){
     const header=btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const claim=btoa(JSON.stringify({iss:calEmail,scope:'https://www.googleapis.com/auth/calendar',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
     const sigInput=`${header}.${claim}`;
-    const pemKey=calKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\s]/g,'').trim();
+    const pemKey=calKey.replace(/\\n/g,'').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g,'').replace(/[\r\n\t ]/g,'').trim();
     const binaryKey=Uint8Array.from(atob(pemKey),c=>c.charCodeAt(0));
     const cryptoKey=await crypto.subtle.importKey('pkcs8',binaryKey,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
     const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',cryptoKey,new TextEncoder().encode(sigInput));
